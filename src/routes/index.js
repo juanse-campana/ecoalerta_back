@@ -1,25 +1,28 @@
 import { Router } from 'express';
 
-// 1. Importa todos tus enrutadores (los "menús" específicos)
-import catalogosRouter from './catalogos.routes.js';
-//import authRouter from './auth.routes.js';
-//import reportesRouter from './reportes.routes.js';
-// import usuariosRouter from './usuarios.routes.js';
+// --- Importación de Rutas ---
+import authRoutes from './auth.routes.js';
+// import alertaRoutes from './alertas.js';
+// import usuarioRoutes from './usuarios.js';
 
 const router = Router();
 
-// 2. Registra cada enrutador en una ruta base
-// Todo lo en 'catalogos.routes.js' ahora comenzará con /catalogos
-router.use('/catalogos', catalogosRouter);
+// --- Ruta Base de la API ---
+router.get('/', (req, res) => {
+  res.json({
+    message: 'API funcionando correctamente',
+    version: '1.0.0',
+    endpoints: {
+      auth: '/api/auth',
+      // alertas: '/api/alertas',
+      // usuarios: '/api/usuarios'
+    }
+  });
+});
 
-// Todo lo en 'auth.routes.js' ahora comenzará con /auth
-//router.use('/auth', authRouter);
+// --- Definición de Rutas por Módulo ---
+router.use('/auth', authRoutes);
+// router.use('/alertas', alertaRoutes);
+// router.use('/usuarios', usuarioRoutes);
 
-// Todo lo en 'reportes.routes.js' ahora comenzará con /reportes
-//router.use('/reportes', reportesRouter);
-
-// (Opcional) Puedes añadir más en el futuro
-// router.use('/usuarios', usuariosRouter);
-
-// Exportamos el "Menú Principal" completo
 export default router;
