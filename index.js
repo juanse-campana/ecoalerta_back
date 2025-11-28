@@ -39,3 +39,19 @@ app.use(errorHandler);
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
 }); 
+
+import { Router } from 'express';
+import authRoutes from './auth.js'; // Importamos el archivo del paso 2
+
+const router = Router();
+
+// --- Definición de Rutas ---
+
+// Todo lo que entre por /auth, se va al archivo authRoutes
+// La URL final será: http://localhost:4000/api/auth/login
+router.use('/auth', authRoutes);
+
+// Aquí irían tus otras rutas, ejemplo:
+// router.use('/alertas', alertaRoutes);
+
+export default router;
