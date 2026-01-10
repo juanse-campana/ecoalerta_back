@@ -1,7 +1,7 @@
-const { verifyToken } = require('../utils/jwt');
-const db = require('../config/database');
+import { verifyToken } from '../utils/jwt.js';
+import pool from '../config/db.js';
 
-const authenticate = async (req, res, next) => {
+export const authenticate = async (req, res, next) => {
   try {
     // Obtener token del header
     const authHeader = req.headers.authorization;
@@ -26,10 +26,13 @@ const authenticate = async (req, res, next) => {
     }
 
     // Verificar que el usuario existe y no está eliminado
-    const [users] = await db.execute(
+    // decoded.id debe ser un UUID string si generamos el token con UUID string.
+    // Pero en el modelo User.js usamos BIN_TO_UUID, asi que 'id' es string.
+    // La query necesita UUID_TO_BIN para comparar
+    const [users] = await pool.query(
       `SELECT BIN_TO_UUID(id_usr_bin) as id, nombre, apellido, correo, rol, id_ciudad
        FROM Usuarios 
-       WHERE BIN_TO_UUID(id_usr_bin) = ? AND deleted_at IS NULL`,
+       WHERE id_usr_bin = UUID_TO_BIN(?) AND deleted_at IS NULL`,
       [decoded.id]
     );
 
@@ -45,6 +48,7 @@ const authenticate = async (req, res, next) => {
     next();
 
   } catch (error) {
+    console.error('Auth Error:', error);
     return res.status(500).json({
       success: false,
       message: 'Error en la autenticación'
@@ -53,7 +57,7 @@ const authenticate = async (req, res, next) => {
 };
 
 // Middleware para verificar roles
-const authorize = (...roles) => {
+export const authorize = (...roles) => {
   return (req, res, next) => {
     if (!req.user) {
       return res.status(401).json({
@@ -72,5 +76,3 @@ const authorize = (...roles) => {
     next();
   };
 };
-
-module.exports = { authenticate, authorize };

@@ -38,6 +38,18 @@ app.get('/health', (req, res) => {
 // --- Rutas de la API ---
 app.use('/api', apiRouter);
 
+// --- Documentación Swagger ---
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpecs from './src/config/swagger.js';
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(swaggerSpecs));
+
+// --- Archivos Estáticos (Uploads) ---
+import path from 'path';
+import { fileURLToPath } from 'url';
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
 // --- Manejo de Rutas No Encontradas ---
 app.use((req, res) => {
   res.status(404).json({ 
@@ -50,8 +62,16 @@ app.use((req, res) => {
 // DEBE ir al final, después de todas las rutas
 app.use(errorHandler);
 
+
 // --- Iniciar Servidor ---
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📍 Entorno: ${process.env.NODE_ENV || 'development'}`);
-});
+// Solo si no estamos en modo test
+if (process.env.NODE_ENV !== 'test') {
+    app.listen(PORT, () => {
+      console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+      console.log(`📚 Documentación en http://localhost:${PORT}/api/docs`);
+      console.log(`📍 Entorno: ${process.env.NODE_ENV || 'development'}`);
+    });
+}
+
+// Exportar para tests
+export default app;
