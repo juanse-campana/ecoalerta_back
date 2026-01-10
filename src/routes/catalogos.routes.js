@@ -3,21 +3,53 @@ import {
   getProvincias,
   getCiudadesByProvincia,
   getCategorias
-} from '../controllers/catalogos.controller.js';
+} from '../controllers/catalogsController.js';
 
 const router = Router();
 
+/**
+ * @swagger
+ * /catalogos/provincias:
+ *   get:
+ *     summary: Obtener todas las provincias
+ *     tags: [Catálogos]
+ *     responses:
+ *       200:
+ *         description: Lista de provincias
+ */
 // GET /api/catalogos/provincias
-// (Obtiene todas las provincias)
 router.get('/provincias', getProvincias);
 
+/**
+ * @swagger
+ * /catalogos/ciudades:
+ *   get:
+ *     summary: Obtener ciudades (filtrar por id_provincia)
+ *     tags: [Catálogos]
+ *     parameters:
+ *       - in: query
+ *         name: id_provincia
+ *         schema:
+ *           type: integer
+ *         description: ID de la provincia para filtrar
+ *     responses:
+ *       200:
+ *         description: Lista de ciudades
+ */
 // GET /api/catalogos/ciudades
-// (Obtiene ciudades, filtradas por un query parameter)
-// Petición de ejemplo: /api/catalogos/ciudades?id_provincia=12
 router.get('/ciudades', getCiudadesByProvincia);
 
+/**
+ * @swagger
+ * /catalogos/categorias:
+ *   get:
+ *     summary: Obtener todas las categorías de reportes
+ *     tags: [Catálogos]
+ *     responses:
+ *       200:
+ *         description: Lista de categorías
+ */
 // GET /api/catalogos/categorias
-// (Obtiene todas las categorías de reportes)
 router.get('/categorias', getCategorias);
 
 export default router;

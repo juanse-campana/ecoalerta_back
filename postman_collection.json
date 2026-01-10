@@ -1,0 +1,360 @@
+{
+	"info": {
+		"_postman_id": "ecoalerta-loja-api",
+		"name": "EcoAlerta Loja API",
+		"description": "Colección de pruebas para el backend de EcoAlerta Loja.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:4000/api",
+			"type": "string"
+		},
+		{
+			"key": "token",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Registro Ciudadano",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"nombre\": \"Juan\",\n    \"apellido\": \"Pérez\",\n    \"correo\": \"juan.perez@example.com\",\n    \"contrasena\": \"SecurePass123!\",\n    \"cedula\": \"1104567890\",\n    \"telefono\": \"0991234567\",\n    \"id_ciudad\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/register",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Login",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success && jsonData.token) {",
+									"    pm.collectionVariables.set(\"token\", jsonData.token);",
+									"    console.log(\"Token guardado:\", jsonData.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"correo\": \"juan.perez@example.com\",\n    \"contrasena\": \"SecurePass123!\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/auth/login",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Catálogos",
+			"item": [
+				{
+					"name": "Listar Provincias",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalogos/provincias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalogos",
+								"provincias"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Ciudades (por Provincia)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalogos/ciudades?id_provincia=11",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalogos",
+								"ciudades"
+							],
+							"query": [
+								{
+									"key": "id_provincia",
+									"value": "11",
+									"description": "11 es usualmente Loja"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Categorías",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/catalogos/categorias",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"catalogos",
+								"categorias"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Reportes",
+			"item": [
+				{
+					"name": "Crear Reporte (Multipart)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text",
+								"disabled": true,
+								"description": "Descomentar para enviar reporte autenticado"
+							}
+						],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "descripcion",
+									"value": "Reporte de prueba desde Postman con imagen",
+									"type": "text"
+								},
+								{
+									"key": "latitud",
+									"value": "-4.0075",
+									"type": "text"
+								},
+								{
+									"key": "longitud",
+									"value": "-79.2085",
+									"type": "text"
+								},
+								{
+									"key": "id_categoria",
+									"value": "1",
+									"type": "text"
+								},
+								{
+									"key": "archivos",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{base_url}}/reportes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Obtener Reportes Públicos (Mapa)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/reportes/publicos",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"publicos"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Mis Reportes (Historial)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reportes/mis-reportes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"mis-reportes"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Listar Reportes (Admin)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reportes/admin?estado=por aprobar",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"admin"
+							],
+							"query": [
+								{
+									"key": "estado",
+									"value": "por aprobar"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Actualizar Estado Reporte",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"estado\": \"en revision\",\n    \"es_publico\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/reportes/admin/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"admin",
+								"1"
+							],
+							"description": "Reemplazar '1' con un ID real de reporte"
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Eliminar Reporte",
+					"request": {
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/reportes/admin/1",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"reportes",
+								"admin",
+								"1"
+							],
+							"description": "Reemplazar '1' con un ID real de reporte"
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	]
+}

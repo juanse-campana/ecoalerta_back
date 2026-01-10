@@ -2,7 +2,7 @@ import { Router } from 'express';
 import authRoutes from './auth.routes.js';
 import reportRoutes from './report.routes.js';
 // import usuarioRoutes from './usuarios.js';
-// import catalogoRoutes from './catalogos.js';
+import catalogoRoutes from './catalogos.routes.js';
 
 const router = Router();
 
@@ -19,6 +19,6 @@ router.get('/', (req, res) => {
 router.use('/auth', authRoutes);
 router.use('/reportes', reportRoutes);
 // router.use('/usuarios', usuarioRoutes);
-// router.use('/catalogos', catalogoRoutes);
+router.use('/catalogos', catalogoRoutes);
 
 export default router;

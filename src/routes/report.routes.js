@@ -84,11 +84,47 @@ router.get('/publicos', ReportController.getPublicReports);
 /**
  * RUTAS USUARIO REGISTRADO
  */
+/**
+ * @swagger
+ * /reportes/mis-reportes:
+ *   get:
+ *     summary: Obtener historial de reportes del usuario autenticado
+ *     tags: [Reportes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Historial de reportes del usuario
+ */
 router.get('/mis-reportes', authenticate, ReportController.getMyReports);
 
 /**
  * RUTAS ADMIN
- (Solo personal con rol 'autoridad' o 'admin')
+ */
+
+/**
+ * @swagger
+ * /reportes/admin:
+ *   get:
+ *     summary: (Admin) Obtener todos los reportes con filtros
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: estado
+ *         schema:
+ *           type: string
+ *           enum: [por aprobar, en revision, en progreso, rechazado, culminado]
+ *       - in: query
+ *         name: id_categoria
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista de reportes filtrada
+ *       403:
+ *         description: No autorizado
  */
 router.get('/admin', 
     authenticate, 
@@ -96,6 +132,35 @@ router.get('/admin',
     ReportController.getAllReports
 );
 
+/**
+ * @swagger
+ * /reportes/admin/{id}:
+ *   put:
+ *     summary: (Admin) Actualizar estado y visibilidad de un reporte
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               estado:
+ *                 type: string
+ *                 enum: [por aprobar, en revision, en progreso, rechazado, culminado]
+ *               es_publico:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Reporte actualizado
+ */
 router.put('/admin/:id', 
     authenticate, 
     authorize('autoridad', 'admin'), 
@@ -107,6 +172,24 @@ router.put('/admin/:id',
     ReportController.updateReportStatus
 );
 
+/**
+ * @swagger
+ * /reportes/admin/{id}:
+ *   delete:
+ *     summary: (Admin) Eliminar un reporte
+ *     tags: [Admin]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Reporte eliminado
+ */
 router.delete('/admin/:id', 
     authenticate, 
     authorize('autoridad', 'admin'), 

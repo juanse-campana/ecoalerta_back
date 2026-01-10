@@ -4,24 +4,26 @@ import { generateToken } from '../utils/jwt.js';
 
 export const login = async (req, res, next) => {
     try {
-        const { email, password } = req.body;
+        const { correo, contrasena } = req.body;
 
         // 1. Buscar usuario
-        const user = await User.findOne({ email });
+        // User.findOne espera un objeto con propiedad email (ver User.js)
+        const user = await User.findOne({ email: correo });
         if (!user) {
-            return res.status(404).json({ message: "Usuario no encontrado" });
+            return res.status(404).json({ success: false, message: "Usuario no encontrado" });
         }
 
         // 2. Verificar password
-        const isMatch = await comparePassword(password, user.contrasena);
+        const isMatch = await comparePassword(contrasena, user.contrasena);
         if (!isMatch) {
-            return res.status(401).json({ message: "Credenciales inválidas" });
+            return res.status(401).json({ success: false, message: "Credenciales inválidas" });
         }
 
         // 3. Generar token
         const token = generateToken(user.id);
 
         res.json({
+            success: true,
             message: "Bienvenido",
             token,
             user: {
@@ -76,6 +78,7 @@ export const register = async (req, res, next) => {
         const token = generateToken(userId);
 
         res.status(201).json({
+            success: true,
             message: "Usuario registrado exitosamente",
             token,
             user: {
