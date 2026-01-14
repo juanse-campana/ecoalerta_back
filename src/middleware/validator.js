@@ -5,6 +5,7 @@ export const validateResult = (req, res, next) => {
     if (!errors.isEmpty()) {
         return res.status(400).json({
             success: false,
+            message: 'Error de validación',
             errors: errors.array()
         });
     }

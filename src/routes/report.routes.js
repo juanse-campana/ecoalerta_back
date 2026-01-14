@@ -1,166 +1,62 @@
-import express from 'express';
+import { Router } from 'express';
 import { check } from 'express-validator';
-import ReportController from '../controllers/reportController.js';
+// CORRECCIÓN: Asegúrate de que este nombre coincida EXACTAMENTE con tu archivo en la carpeta controllers
+import ReportController from '../controllers/reportController.js'; 
 import upload from '../middleware/upload.js';
 import { authenticate, authorize } from '../middleware/auth.js';
 import { validateResult } from '../middleware/validator.js';
 
-const router = express.Router();
+const router = Router();
 
-/**
- * RUTAS PÚBLICAS
- */
-
-// Crear reporte (Anónimo o Registrado - si envía token se asocia)
-// Nota: Para permitir opcionalmente auth, podríamos hacer un middleware "softAuthenticate"
-// o simplemente chequeamos si hay header en el controlador o usamos `authenticate` pero modificado.
-// Para simplificar, haremos una ruta POST / que intenta autenticar pero no falla si no hay token?
-// Express chain: Si usas authenticate, fallará si no hay token.
-// Estrategia: Crear middleware 'optionalAuth' o dos rutas distintas.
-// Usaremos un middleware inline simple para optionalAuth.
-
+// --- Middleware para Autenticación Opcional ---
 const optionalAuth = async (req, res, next) => {
     if (req.headers.authorization) {
-        await authenticate(req, res, next);
-    } else {
-        next();
+        return authenticate(req, res, next);
     }
+    req.user = null;
+    next();
 };
 
-/**
- * @swagger
- * /reportes:
- *   post:
- *     summary: Crear un nuevo reporte
- *     tags: [Reportes]
- *     requestBody:
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               descripcion:
- *                 type: string
- *               latitud:
- *                 type: number
- *               longitud:
- *                 type: number
- *               id_categoria:
- *                 type: integer
- *               archivos:
- *                 type: array
- *                 items:
- *                   type: string
- *                   format: binary
- *     responses:
- *       201:
- *         description: Reporte creado exitosamente
- */
+// ==========================================
+// RUTAS PÚBLICAS Y DE CREACIÓN
+// ==========================================
+
+// Crear reporte (POST /api/reportes)
 router.post('/', 
     optionalAuth,
-    upload.array('archivos', 5), // Max 5 archivos
+    upload.array('archivos', 5), 
     [
-        check('latitud').isFloat().withMessage('Latitud debe ser un número'),
-        check('longitud').isFloat().withMessage('Longitud debe ser un número'),
+        check('latitud').isFloat().withMessage('Latitud debe ser un número decimal'),
+        check('longitud').isFloat().withMessage('Longitud debe ser un número decimal'),
         check('id_categoria').isInt().withMessage('Categoría inválida'),
+        check('descripcion').notEmpty().withMessage('La descripción es obligatoria'),
         validateResult
     ],
     ReportController.createReport
 );
 
-// Obtener reportes públicos (Mapa)
-/**
- * @swagger
- * /reportes/publicos:
- *   get:
- *     summary: Obtener reportes públicos para el mapa
- *     tags: [Reportes]
- *     responses:
- *       200:
- *         description: Lista de reportes públicos
- */
+// Obtener reportes públicos (GET /api/reportes/publicos)
 router.get('/publicos', ReportController.getPublicReports);
 
-/**
- * RUTAS USUARIO REGISTRADO
- */
-/**
- * @swagger
- * /reportes/mis-reportes:
- *   get:
- *     summary: Obtener historial de reportes del usuario autenticado
- *     tags: [Reportes]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: Historial de reportes del usuario
- */
+// ==========================================
+// RUTAS USUARIO REGISTRADO
+// ==========================================
+
+// Historial del usuario (GET /api/reportes/mis-reportes)
 router.get('/mis-reportes', authenticate, ReportController.getMyReports);
 
-/**
- * RUTAS ADMIN
- */
+// ==========================================
+// RUTAS ADMIN
+// ==========================================
 
-/**
- * @swagger
- * /reportes/admin:
- *   get:
- *     summary: (Admin) Obtener todos los reportes con filtros
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: query
- *         name: estado
- *         schema:
- *           type: string
- *           enum: [por aprobar, en revision, en progreso, rechazado, culminado]
- *       - in: query
- *         name: id_categoria
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Lista de reportes filtrada
- *       403:
- *         description: No autorizado
- */
+// Obtener todos los reportes (GET /api/reportes/admin)
 router.get('/admin', 
     authenticate, 
     authorize('autoridad', 'admin', 'moderador'), 
     ReportController.getAllReports
 );
 
-/**
- * @swagger
- * /reportes/admin/{id}:
- *   put:
- *     summary: (Admin) Actualizar estado y visibilidad de un reporte
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     requestBody:
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               estado:
- *                 type: string
- *                 enum: [por aprobar, en revision, en progreso, rechazado, culminado]
- *               es_publico:
- *                 type: boolean
- *     responses:
- *       200:
- *         description: Reporte actualizado
- */
+// Actualizar estado (PUT /api/reportes/admin/:id)
 router.put('/admin/:id', 
     authenticate, 
     authorize('autoridad', 'admin'), 
@@ -172,24 +68,7 @@ router.put('/admin/:id',
     ReportController.updateReportStatus
 );
 
-/**
- * @swagger
- * /reportes/admin/{id}:
- *   delete:
- *     summary: (Admin) Eliminar un reporte
- *     tags: [Admin]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: integer
- *     responses:
- *       200:
- *         description: Reporte eliminado
- */
+// Eliminar reporte (DELETE /api/reportes/admin/:id)
 router.delete('/admin/:id', 
     authenticate, 
     authorize('autoridad', 'admin'), 
