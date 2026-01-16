@@ -4,104 +4,96 @@ import redisClient from '../config/redisClient.js';
 // Definimos los nombres de nuestras "llaves" de caché
 const PROVINCIAS_CACHE_KEY = 'catalogos:provincias';
 const CATEGORIAS_CACHE_KEY = 'catalogos:categorias';
-// Nota: La llave de ciudades debe ser dinámica
 
-/**
- * @name findProvincias
- * @description Chef (Servicio) para buscar todas las provincias.
- * Primero intenta buscar en el caché de Redis.
- */
+// Datos de respaldo (Fallback)
+const FALLBACK_PROVINCIAS = [
+  { id_provincia: 1, nombre: 'Loja' },
+  { id_provincia: 2, nombre: 'Azuay' },
+  { id_provincia: 3, nombre: 'Pichincha' },
+  { id_provincia: 4, nombre: 'Guayas' }
+];
+
+const FALLBACK_CIUDADES = [
+  { id_ciudad: 1, nombre: 'Loja', id_provincia: 1 },
+  { id_ciudad: 2, nombre: 'Catamayo', id_provincia: 1 },
+  { id_ciudad: 3, nombre: 'Saraguro', id_provincia: 1 },
+  { id_ciudad: 4, nombre: 'Cuenca', id_provincia: 2 },
+  { id_ciudad: 5, nombre: 'Gualaceo', id_provincia: 2 },
+  { id_ciudad: 6, nombre: 'Quito', id_provincia: 3 },
+  { id_ciudad: 7, nombre: 'Cayambe', id_provincia: 3 },
+  { id_ciudad: 8, nombre: 'Guayaquil', id_provincia: 4 },
+  { id_ciudad: 9, nombre: 'Samborondón', id_provincia: 4 }
+];
+
+const FALLBACK_CATEGORIAS = [
+  { id_categoria: 1, nombre: 'fauna' },
+  { id_categoria: 2, nombre: 'basura' },
+  { id_categoria: 3, nombre: 'quema' },
+  { id_categoria: 4, nombre: 'deforestacion' },
+  { id_categoria: 5, nombre: 'contaminacion' },
+  { id_categoria: 6, nombre: 'ruido' },
+  { id_categoria: 7, nombre: 'aire' },
+  { id_categoria: 8, nombre: 'infraestructura' }
+];
+
 export const findProvincias = async () => {
   try {
-    // 1. Intentar obtener de Redis
     const cachedData = await redisClient.get(PROVINCIAS_CACHE_KEY);
-
     if (cachedData) {
       console.log('CACHE HIT: Sirviendo provincias desde Redis');
-      return JSON.parse(cachedData); // Devolver datos de caché
+      return JSON.parse(cachedData);
     }
 
-    // 2. Si no está en caché (Cache MISS), ir a MySQL
     console.log('CACHE MISS: Buscando provincias en MySQL');
     const [rows] = await pool.query('SELECT * FROM Provincias ORDER BY nombre ASC');
 
-    // 3. Guardar en Redis para la próxima vez (con expiración de 1 día)
-    await redisClient.set(PROVINCIAS_CACHE_KEY, JSON.stringify(rows), {
-      EX: 86400, // 86400 segundos = 1 día
-    });
+    const data = rows.length > 0 ? rows : FALLBACK_PROVINCIAS;
 
-    return rows; // Devolver datos de la DB
+    await redisClient.set(PROVINCIAS_CACHE_KEY, JSON.stringify(data), { EX: 86400 });
+    return data;
 
   } catch (error) {
-    // Si algo falla, lanza el error para que el controlador lo atrape
-    throw new Error('Error al buscar provincias: ' + error.message);
+    console.error("Using fallback for Provincias due to error:", error.message);
+    return FALLBACK_PROVINCIAS;
   }
 };
 
-/**
- * @name findCiudadesByProvincia
- * @description Chef (Servicio) para buscar ciudades por un id_provincia.
- * Usa un caché dinámico basado en el ID.
- */
 export const findCiudadesByProvincia = async (idProvincia) => {
-  // Creamos una llave de caché única para esta provincia
   const CIUDADES_CACHE_KEY = `catalogos:ciudades:${idProvincia}`;
 
   try {
-    // 1. Intentar obtener de Redis
     const cachedData = await redisClient.get(CIUDADES_CACHE_KEY);
+    if (cachedData) return JSON.parse(cachedData);
 
-    if (cachedData) {
-      console.log(`CACHE HIT: Sirviendo ciudades para provincia ${idProvincia} desde Redis`);
-      return JSON.parse(cachedData);
-    }
-
-    // 2. Si no está en caché (Cache MISS), ir a MySQL
     console.log(`CACHE MISS: Buscando ciudades para provincia ${idProvincia} en MySQL`);
-    
-    // ¡Usamos '?' para prevenir Inyección SQL!
-    const query = 'SELECT * FROM Ciudades WHERE id_provincia = ? ORDER BY nombre ASC';
-    const [rows] = await pool.query(query, [idProvincia]);
+    const [rows] = await pool.query('SELECT * FROM Ciudades WHERE id_provincia = ? ORDER BY nombre ASC', [idProvincia]);
 
-    // 3. Guardar en Redis (expiración de 1 día)
-    await redisClient.set(CIUDADES_CACHE_KEY, JSON.stringify(rows), {
-      EX: 86400,
-    });
+    const data = rows.length > 0 ? rows : FALLBACK_CIUDADES.filter(c => c.id_provincia == idProvincia);
 
-    return rows; // Devolver datos de la DB
+    await redisClient.set(CIUDADES_CACHE_KEY, JSON.stringify(data), { EX: 86400 });
+    return data;
 
   } catch (error) {
-    throw new Error('Error al buscar ciudades: ' + error.message);
+    console.error("Using fallback for Ciudades due to error:", error.message);
+    return FALLBACK_CIUDADES.filter(c => c.id_provincia == idProvincia);
   }
 };
 
-/**
- * @name findCategorias
- * @description Chef (Servicio) para buscar todas las categorías.
- * Primero intenta buscar en el caché de Redis.
- */
 export const findCategorias = async () => {
   try {
-    // 1. Intentar obtener de Redis
     const cachedData = await redisClient.get(CATEGORIAS_CACHE_KEY);
+    if (cachedData) return JSON.parse(cachedData);
 
-    if (cachedData) {
-      console.log('CACHE HIT: Sirviendo categorías desde Redis');
-      return JSON.parse(cachedData);
-    }
-
-    // 2. Si no está en caché (Cache MISS), ir a MySQL
     console.log('CACHE MISS: Buscando categorías en MySQL');
     const [rows] = await pool.query('SELECT * FROM Categorias ORDER BY nombre ASC');
 
-    // 3. Guardar en Redis (expiración de 1 día)
-    await redisClient.set(CATEGORIAS_CACHE_KEY, JSON.stringify(rows), {
-      EX: 86400,
-    });
+    const data = rows.length > 0 ? rows : FALLBACK_CATEGORIAS;
 
-    return rows; // Devolver datos de la DB
+    await redisClient.set(CATEGORIAS_CACHE_KEY, JSON.stringify(data), { EX: 86400 });
+    return data;
 
   } catch (error) {
-    throw new Error('Error al buscar categorías: ' + error.message);
+    console.error("Using fallback for Categorias due to error:", error.message);
+    return FALLBACK_CATEGORIAS;
   }
 };

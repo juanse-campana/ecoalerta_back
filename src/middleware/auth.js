@@ -5,7 +5,7 @@ const authenticate = async (req, res, next) => {
   try {
     // Obtener token del header
     const authHeader = req.headers.authorization;
-    
+
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return res.status(401).json({
         success: false,
@@ -17,7 +17,7 @@ const authenticate = async (req, res, next) => {
 
     // Verificar token
     const decoded = verifyToken(token);
-    
+
     if (!decoded) {
       return res.status(401).json({
         success: false,
@@ -26,10 +26,20 @@ const authenticate = async (req, res, next) => {
     }
 
     // Verificar que el usuario existe y no está eliminado
+<<<<<<< Updated upstream
     const [users] = await db.execute(
       `SELECT BIN_TO_UUID(id_usr_bin) as id, nombre, apellido, correo, rol, id_ciudad
        FROM Usuarios 
        WHERE BIN_TO_UUID(id_usr_bin) = ? AND deleted_at IS NULL`,
+=======
+    // decoded.id debe ser un UUID string si generamos el token con UUID string.
+    // Pero en el modelo User.js usamos BIN_TO_UUID, asi que 'id' es string.
+    // La query necesita UUID_TO_BIN para comparar
+    const [users] = await pool.query(
+      `SELECT id_usr as id, nombre, apellido, correo, rol, id_ciudad
+       FROM Usuarios 
+       WHERE id_usr = ?`,
+>>>>>>> Stashed changes
       [decoded.id]
     );
 
