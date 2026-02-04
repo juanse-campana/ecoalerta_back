@@ -1,0 +1,47 @@
+node : file:///C:/Users/U
+suario/Documents/GitHub/e
+coalerta_back/src/routes/
+report.routes.js:6
+En l?nea: 1 Car?cter: 1
++ node index.js 2>&1 | 
+Out-File -Encoding ascii 
+error_3.txt
++ ~~~~~~~~~~~~~~~~~~
+    + CategoryInfo       
+       : NotSpecified:   
+  (file:///C:/User...o   
+ rt.routes.js:6:Strin    
+g) [], RemoteExcepti    
+on
+    + FullyQualifiedErro 
+   rId : NativeCommandE  
+  rror
+ 
+import { validateResult 
+} from '../middleware/val
+idator.js';
+         ^^^^^^^^^^^^^^
+SyntaxError: The 
+requested module '../midd
+leware/validator.js' 
+does not provide an 
+export named 
+'validateResult'
+    at 
+ModuleJob._instantiate (n
+ode:internal/modules/esm/
+module_job:180:21)
+    at async 
+ModuleJob.run (node:inter
+nal/modules/esm/module_jo
+b:263:5)
+    at async onImport.tra
+cePromise.__proto__ (node
+:internal/modules/esm/loa
+der:547:26)
+    at async asyncRunEntr
+yPointWithESMLoader (node
+:internal/modules/run_mai
+n:116:5)
+
+Node.js v22.12.0

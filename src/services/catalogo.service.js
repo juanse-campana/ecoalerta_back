@@ -45,7 +45,7 @@ export const findProvincias = async () => {
     }
 
     console.log('CACHE MISS: Buscando provincias en MySQL');
-    const [rows] = await pool.query('SELECT * FROM Provincias ORDER BY nombre ASC');
+    const [rows] = await pool.query('SELECT * FROM provincias ORDER BY nombre ASC');
 
     const data = rows.length > 0 ? rows : FALLBACK_PROVINCIAS;
 
@@ -66,7 +66,7 @@ export const findCiudadesByProvincia = async (idProvincia) => {
     if (cachedData) return JSON.parse(cachedData);
 
     console.log(`CACHE MISS: Buscando ciudades para provincia ${idProvincia} en MySQL`);
-    const [rows] = await pool.query('SELECT * FROM Ciudades WHERE id_provincia = ? ORDER BY nombre ASC', [idProvincia]);
+    const [rows] = await pool.query('SELECT * FROM ciudades WHERE id_provincia = ? ORDER BY nombre ASC', [idProvincia]);
 
     const data = rows.length > 0 ? rows : FALLBACK_CIUDADES.filter(c => c.id_provincia == idProvincia);
 
@@ -85,7 +85,7 @@ export const findCategorias = async () => {
     if (cachedData) return JSON.parse(cachedData);
 
     console.log('CACHE MISS: Buscando categorías en MySQL');
-    const [rows] = await pool.query('SELECT * FROM Categorias ORDER BY nombre ASC');
+    const [rows] = await pool.query('SELECT * FROM categorias ORDER BY nombre ASC');
 
     const data = rows.length > 0 ? rows : FALLBACK_CATEGORIAS;
 

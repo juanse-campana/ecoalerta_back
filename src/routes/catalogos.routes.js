@@ -3,7 +3,7 @@ import {
   getProvincias,
   getCiudadesByProvincia,
   getCategorias
-} from '../controllers/catalogos.controller.js';
+} from '../controllers/catalogsController.js';
 
 const router = Router();
 

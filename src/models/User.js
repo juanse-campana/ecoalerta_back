@@ -1,36 +1,34 @@
-const mongoose = require('mongoose');
+import pool from '../config/db.js';
 
-<<<<<<< Updated upstream
-const userSchema = new mongoose.Schema({
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        trim: true
-    },
-    password: {
-        type: String,
-        required: true
-    },
-    role: {
-        type: String,
-        enum: ['user', 'admin'],
-        default: 'user'
-=======
 class User {
     static async findOne(criteria) {
-        const [rows] = await pool.query(
-            'SELECT id_usr, nombre, apellido, correo, contrasena, rol, cedula, telefono, id_ciudad FROM Usuarios WHERE correo = ? LIMIT 1',
-            [criteria.email]
-        );
-        return rows[0] || null;
->>>>>>> Stashed changes
-    }
-}, { timestamps: true });
+        // Build base query with joins
+        let sql = `
+            SELECT 
+                u.id_usr, u.nombre, u.apellido, u.correo, u.contrasena, u.rol, u.cedula, u.telefono, u.id_ciudad,
+                c.nombre as ciudad_nombre,
+                p.nombre as provincia_nombre
+            FROM Usuarios u
+            LEFT JOIN Ciudades c ON u.id_ciudad = c.id_ciudad
+            LEFT JOIN Provincias p ON c.id_provincia = p.id_provincia
+            WHERE 
+        `;
+        let params = [];
 
-<<<<<<< Updated upstream
-module.exports = mongoose.model('User', userSchema);
-=======
+        if (criteria.email) {
+            sql += 'u.correo = ?';
+            params.push(criteria.email);
+        } else if (criteria.id) {
+            sql += 'u.id_usr = ?';
+            params.push(criteria.id);
+        } else {
+            return null;
+        }
+
+        const [rows] = await pool.query(sql + ' LIMIT 1', params);
+        return rows[0] || null;
+    }
+
     static async findById(id) {
         const [rows] = await pool.query(
             'SELECT id_usr, nombre, apellido, correo, rol, cedula, telefono, id_ciudad FROM Usuarios WHERE id_usr = ? LIMIT 1',
@@ -101,13 +99,14 @@ module.exports = mongoose.model('User', userSchema);
         }
 
         if (fields.length === 0) {
-            throw new Error('No hay campos para actualizar');
+            // throw new Error('No hay campos para actualizar');
+            return 0;
         }
 
         values.push(id);
 
         const [result] = await pool.query(
-            `UPDATE Usuarios SET ${fields.join(', ')} WHERE id_usr_bin = UUID_TO_BIN(?) AND deleted_at IS NULL`,
+            `UPDATE Usuarios SET ${fields.join(', ')} WHERE id_usr = ?`,
             values
         );
 
@@ -116,7 +115,7 @@ module.exports = mongoose.model('User', userSchema);
 
     static async delete(id) {
         const [result] = await pool.query(
-            'UPDATE Usuarios SET deleted_at = CURRENT_TIMESTAMP WHERE id_usr_bin = UUID_TO_BIN(?) AND deleted_at IS NULL',
+            'UPDATE Usuarios SET deleted_at = CURRENT_TIMESTAMP WHERE id_usr = ? AND deleted_at IS NULL',
             [id]
         );
         return result.affectedRows;
@@ -124,7 +123,7 @@ module.exports = mongoose.model('User', userSchema);
 
     static async hardDelete(id) {
         const [result] = await pool.query(
-            'DELETE FROM Usuarios WHERE id_usr_bin = UUID_TO_BIN(?)',
+            'DELETE FROM Usuarios WHERE id_usr = ?',
             [id]
         );
         return result.affectedRows;
@@ -132,4 +131,3 @@ module.exports = mongoose.model('User', userSchema);
 }
 
 export default User;
->>>>>>> Stashed changes
