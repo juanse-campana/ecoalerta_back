@@ -17,6 +17,42 @@ const optionalAuth = async (req, res, next) => {
 };
 
 // ==========================================
+// RUTAS ADMIN (Prioridad Alta)
+// ==========================================
+
+// Obtener todos los reportes (GET /api/reportes/admin)
+router.get('/admin',
+    authenticate,
+    authorize('autoridad', 'admin', 'moderador'),
+    ReportController.getAllReports
+);
+
+// Obtener reportes pendientes (GET /api/reportes/pendientes)
+router.get('/pendientes',
+    authenticate,
+    authorize('autoridad', 'admin', 'moderador'),
+    ReportController.getPendientes
+);
+
+// Actualizar estado (PUT /api/reportes/admin/:id)
+router.put('/admin/:id',
+    authenticate,
+    authorize('autoridad', 'admin'),
+    [
+        check('estado').optional().isIn(['Pendiente', 'Aprobado', 'Rechazado', 'por aprobar', 'en revision', 'en progreso', 'rechazado', 'culminado']),
+        validateResult
+    ],
+    ReportController.updateReportStatus
+);
+
+// Eliminar reporte (DELETE /api/reportes/admin/:id)
+router.delete('/admin/:id',
+    authenticate,
+    authorize('autoridad', 'admin'),
+    ReportController.deleteReport
+);
+
+// ==========================================
 // RUTAS PÚBLICAS Y DE CREACIÓN
 // ==========================================
 
@@ -44,13 +80,13 @@ router.get('/publicos', ReportController.getPublicReports);
 // Historial del usuario (GET /api/reportes/mis-reportes)
 router.get('/mis-reportes', authenticate, ReportController.getMyReports);
 
+// (Rutas Admin movidas al inicio)
+
+// ==========================================
+// RUTAS USUARIO REGISTRADO Y DINÁMICAS
+// ==========================================
+
 // Obtener un reporte por ID (GET /api/reportes/:id)
-// Nota: Debería ser público o restringido? El controlador verifica propiedad para editar/borrar, pero para ver?
-// Public reports are visible to everyone. Private ones only to owner.
-// Controller logic for getReportById simply fetches it. `Report.findById` returns everything.
-// Let's make it optionalAuth so we can check if user is owner if needed, but for now open is fine or use logic.
-// Given requirement to "integrate without damaging", let's keep it simple.
-// Allowing authenticated access for now since it's mostly for editing.
 router.get('/:id', authenticate, ReportController.getReportById);
 
 // Editar reporte propio (PUT /api/reportes/:id)
@@ -59,34 +95,6 @@ router.put('/:id', authenticate, ReportController.updateReport);
 // Eliminar reporte propio (DELETE /api/reportes/:id)
 router.delete('/:id', authenticate, ReportController.deleteReport);
 
-// ==========================================
-// RUTAS ADMIN
-// ==========================================
-
-// Obtener todos los reportes (GET /api/reportes/admin)
-router.get('/admin',
-    authenticate,
-    authorize('autoridad', 'admin', 'moderador'),
-    ReportController.getAllReports
-);
-
-// Actualizar estado (PUT /api/reportes/admin/:id)
-router.put('/admin/:id',
-    authenticate,
-    authorize('autoridad', 'admin'),
-    [
-        check('estado').optional().isIn(['por aprobar', 'en revision', 'en progreso', 'rechazado', 'culminado']),
-        check('es_publico').optional().isBoolean(),
-        validateResult
-    ],
-    ReportController.updateReportStatus
-);
-
-// Eliminar reporte (DELETE /api/reportes/admin/:id)
-router.delete('/admin/:id',
-    authenticate,
-    authorize('autoridad', 'admin'),
-    ReportController.deleteReport
-);
+// (Rutas Admin movidas arriba para evitar colisiones)
 
 export default router;

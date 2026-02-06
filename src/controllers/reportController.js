@@ -153,6 +153,20 @@ class ReportController {
         }
     }
 
+    static async getPendientes(req, res) {
+        try {
+            // Reutilizamos findAllAdmin filtrando por estado 'por aprobar'
+            const reports = await Report.findAllAdmin({ estado: 'por aprobar' });
+            res.json({
+                success: true,
+                data: reports
+            });
+        } catch (error) {
+            console.error('Error fetching pendientes:', error);
+            res.status(500).json({ success: false, message: 'Error del servidor' });
+        }
+    }
+
     static async updateReportStatus(req, res) {
         try {
             const { id } = req.params;
