@@ -34,6 +34,15 @@ router.get('/pendientes',
     ReportController.getPendientes
 );
 
+// Estadísticas del usuario logueado (GET /api/reportes/mis-stats)
+router.get('/mis-stats',
+    authenticate,
+    ReportController.getUserStats
+);
+
+// Contador de reportes del día (GET /api/reportes/hoy)
+router.get('/hoy', ReportController.getTodayCount);
+
 // Actualizar estado (PUT /api/reportes/admin/:id)
 router.put('/admin/:id',
     authenticate,
@@ -71,7 +80,7 @@ router.post('/',
 );
 
 // Obtener reportes públicos (GET /api/reportes/publicos)
-router.get('/publicos', ReportController.getPublicReports);
+router.get('/publicos', optionalAuth, ReportController.getPublicReports);
 
 // ==========================================
 // RUTAS USUARIO REGISTRADO

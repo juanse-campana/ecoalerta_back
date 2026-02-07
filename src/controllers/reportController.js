@@ -7,7 +7,7 @@ class ReportController {
 
     static async createReport(req, res) {
         try {
-            const { descripcion, latitud, longitud, id_categoria } = req.body;
+            const { descripcion, latitud, longitud, id_categoria, ubicacion } = req.body;
 
             // Si hay usuario autenticado, usamos su ID, sino es null (anónimo)
             const id_usr_bin = req.user ? req.user.id : null;
@@ -17,6 +17,7 @@ class ReportController {
                 descripcion,
                 latitud,
                 longitud,
+                ubicacion,
                 id_categoria,
                 id_usr_bin
             });
@@ -56,7 +57,8 @@ class ReportController {
     static async getReportById(req, res) {
         try {
             const { id } = req.params;
-            const report = await Report.findById(id);
+            const currentUserId = req.user?.id;
+            const report = await Report.findById(id, currentUserId);
 
             if (!report) {
                 return res.status(404).json({ success: false, message: 'Reporte no encontrado' });
@@ -74,7 +76,8 @@ class ReportController {
 
     static async getPublicReports(req, res) {
         try {
-            const reports = await Report.findAllPublic();
+            const currentUserId = req.user?.id;
+            const reports = await Report.findAllPublic(currentUserId);
 
             // Para cada reporte, podríamos querer adjuntar su multimedia principal
             // Por rendimiento, idealmente haríamos un JOIN en el modelo, 
@@ -93,7 +96,8 @@ class ReportController {
 
     static async getMyReports(req, res) {
         try {
-            const reports = await Report.findByUserId(req.user.id);
+            const currentUserId = req.user.id;
+            const reports = await Report.findByUserId(currentUserId);
             res.json({
                 success: true,
                 data: reports
@@ -163,6 +167,38 @@ class ReportController {
             });
         } catch (error) {
             console.error('Error fetching pendientes:', error);
+            res.status(500).json({ success: false, message: 'Error del servidor' });
+        }
+    }
+
+    // Estadísticas del usuario logueado
+    static async getUserStats(req, res) {
+        try {
+            const userId = req.user.id;
+            const stats = await Report.countByUser(userId);
+            res.json({
+                success: true,
+                data: {
+                    totalReportes: parseInt(stats.total) || 0,
+                    activos: parseInt(stats.activos) || 0
+                }
+            });
+        } catch (error) {
+            console.error('Error fetching user stats:', error);
+            res.status(500).json({ success: false, message: 'Error del servidor' });
+        }
+    }
+
+    // Contador de reportes del día (global)
+    static async getTodayCount(req, res) {
+        try {
+            const count = await Report.countTodayAll();
+            res.json({
+                success: true,
+                data: { reportesHoy: count }
+            });
+        } catch (error) {
+            console.error('Error fetching today count:', error);
             res.status(500).json({ success: false, message: 'Error del servidor' });
         }
     }

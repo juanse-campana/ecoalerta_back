@@ -4,6 +4,7 @@ import { Router } from 'express';
 import catalogosRouter from './catalogos.routes.js';
 import authRouter from './auth.routes.js';
 import reportesRouter from './report.routes.js';
+import interactionRouter from './interaction.routes.js';
 // import usuariosRouter from './usuarios.routes.js';
 
 const router = Router();
@@ -17,6 +18,9 @@ router.use('/auth', authRouter);
 
 // Todo lo en 'reportes.routes.js' ahora comenzará con /reportes
 router.use('/reportes', reportesRouter);
+
+// Interacciones (likes, comentarios, vistas, notificaciones, trending)
+router.use('/', interactionRouter);
 
 // (Opcional) Puedes añadir más en el futuro
 // router.use('/usuarios', usuariosRouter);

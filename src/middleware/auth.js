@@ -83,3 +83,43 @@ export const authorize = (...roles) => {
     next();
   };
 };
+
+// Middleware opcional - no requiere auth pero añade user si existe token
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      // Sin token, continuar sin user
+      req.user = null;
+      return next();
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = verifyToken(token);
+
+    if (!decoded) {
+      req.user = null;
+      return next();
+    }
+
+    const [users] = await pool.query(
+      `SELECT id_usr, nombre, apellido, correo, rol, id_ciudad
+       FROM Usuarios 
+       WHERE id_usr = ?`,
+      [decoded.id]
+    );
+
+    if (users.length > 0) {
+      req.user = users[0];
+      req.user.id = users[0].id_usr;
+    } else {
+      req.user = null;
+    }
+
+    next();
+  } catch (error) {
+    req.user = null;
+    next();
+  }
+};

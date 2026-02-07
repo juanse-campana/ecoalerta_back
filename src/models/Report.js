@@ -2,15 +2,16 @@ import pool from '../config/db.js';
 
 class Report {
     static async create(data) {
-        // data: { descripcion, latitud, longitud, id_categoria, id_usr_bin (opcional) }
+        // data: { descripcion, latitud, longitud, ubicacion, id_categoria, id_usr (opcional) }
         const [result] = await pool.query(
             `INSERT INTO Reportes 
-            (descripcion, latitud, longitud, estado, id_categoria, id_usr) 
-            VALUES (?, ?, ?, 'por aprobar', ?, ?)`,
+            (descripcion, latitud, longitud, ubicacion, estado, id_categoria, id_usr) 
+            VALUES (?, ?, ?, ?, 'por aprobar', ?, ?)`,
             [
                 data.descripcion || null,
                 data.latitud,
                 data.longitud,
+                data.ubicacion || null,
                 data.id_categoria,
                 data.id_usr || null
             ]
@@ -21,13 +22,14 @@ class Report {
     static async createSimple(data) {
         const query = `
             INSERT INTO Reportes 
-            (descripcion, latitud, longitud, estado, id_categoria, id_usr) 
-            VALUES (?, ?, ?, 'por aprobar', ?, ?)
+            (descripcion, latitud, longitud, ubicacion, estado, id_categoria, id_usr) 
+            VALUES (?, ?, ?, ?, 'por aprobar', ?, ?)
         `;
         const params = [
             data.descripcion || null,
             data.latitud,
             data.longitud,
+            data.ubicacion || null,
             data.id_categoria,
             data.id_usr_bin || null
         ];
@@ -36,46 +38,83 @@ class Report {
         return result.insertId;
     }
 
-    static async findAllPublic() {
+    static async findAllPublic(currentUserId = null) {
         const [rows] = await pool.query(
             `SELECT 
                 r.id_reporte, 
                 r.descripcion, 
                 r.latitud, 
                 r.longitud, 
+                r.ubicacion,
                 r.estado, 
                 r.id_categoria,
                 r.id_usr,
+                r.creado_en,
                 u.nombre as autor_nombre,
                 u.apellido as autor_apellido,
-                (SELECT url FROM Multimedia m WHERE m.id_reporte = r.id_reporte LIMIT 1) as imagen
+                (SELECT url FROM Multimedia m WHERE m.id_reporte = r.id_reporte LIMIT 1) as imagen,
+                (SELECT COUNT(*) FROM Likes l WHERE l.id_reporte = r.id_reporte) as likes,
+                (SELECT COUNT(*) FROM Comentarios c WHERE c.id_reporte = r.id_reporte) as comentarios,
+                (SELECT COUNT(*) FROM Vistas v WHERE v.id_reporte = r.id_reporte) as vistas,
+                IF(? IS NOT NULL, (SELECT COUNT(*) > 0 FROM Likes l WHERE l.id_reporte = r.id_reporte AND l.id_usr = ?), 0) as liked_by_me
              FROM Reportes r
              LEFT JOIN Usuarios u ON r.id_usr = u.id_usr
              WHERE r.estado = 'Aprobado'
-             ORDER BY r.id_reporte DESC`
+             ORDER BY r.id_reporte DESC`,
+            [currentUserId, currentUserId]
         );
         return rows;
     }
 
-    static async findById(id) {
+    static async findById(id, currentUserId = null) {
         const [rows] = await pool.query(
             `SELECT 
                 r.id_reporte, 
                 r.descripcion, 
                 r.latitud, 
                 r.longitud, 
-                r.estado, 
+                r.ubicacion,
                 r.estado, 
                 r.id_categoria,
                 r.id_usr as id_usuario,
+                r.creado_en,
                 u.nombre as autor_nombre,
-                u.apellido as autor_apellido
+                u.apellido as autor_apellido,
+                (SELECT COUNT(*) FROM Likes l WHERE l.id_reporte = r.id_reporte) as likes,
+                (SELECT COUNT(*) FROM Comentarios c WHERE c.id_reporte = r.id_reporte) as comentarios,
+                (SELECT COUNT(*) FROM Vistas v WHERE v.id_reporte = r.id_reporte) as vistas,
+                IF(? IS NOT NULL, (SELECT COUNT(*) > 0 FROM Likes l WHERE l.id_reporte = r.id_reporte AND l.id_usr = ?), 0) as liked_by_me
              FROM Reportes r
              LEFT JOIN Usuarios u ON r.id_usr = u.id_usr
              WHERE r.id_reporte = ?`,
-            [id]
+            [currentUserId, currentUserId, id]
         );
         return rows[0] || null;
+    }
+
+    // Reportes del usuario logueado
+    static async findByUserId(userId, currentUserId = null) {
+        const [rows] = await pool.query(
+            `SELECT 
+                r.id_reporte, 
+                r.descripcion, 
+                r.latitud, 
+                r.longitud, 
+                r.ubicacion,
+                r.estado, 
+                r.id_categoria,
+                r.creado_en,
+                (SELECT url FROM Multimedia m WHERE m.id_reporte = r.id_reporte LIMIT 1) as imagen,
+                (SELECT COUNT(*) FROM Likes l WHERE l.id_reporte = r.id_reporte) as likes,
+                (SELECT COUNT(*) FROM Comentarios c WHERE c.id_reporte = r.id_reporte) as comentarios,
+                (SELECT COUNT(*) FROM Vistas v WHERE v.id_reporte = r.id_reporte) as vistas,
+                IF(? IS NOT NULL, (SELECT COUNT(*) > 0 FROM Likes l WHERE l.id_reporte = r.id_reporte AND l.id_usr = ?), 0) as liked_by_me
+             FROM Reportes r
+             WHERE r.id_usr = ?
+             ORDER BY r.id_reporte DESC`,
+            [currentUserId, currentUserId, userId]
+        );
+        return rows;
     }
 
     // ... (omitting lines for brevity, applying similarly to other methods)
@@ -87,9 +126,12 @@ class Report {
                 r.descripcion, 
                 r.latitud, 
                 r.longitud, 
+                r.ubicacion,
                 r.estado, 
                 r.id_categoria,
                 r.id_usr as id_usuario,
+                r.creado_en,
+                c.nombre as categoria_nombre,
                 u.nombre as usuario_nombre,
                 u.apellido as usuario_apellido,
                 u.cedula as usuario_cedula,
@@ -98,6 +140,7 @@ class Report {
                 (SELECT url FROM Multimedia m WHERE m.id_reporte = r.id_reporte LIMIT 1) as imagen
             FROM Reportes r
             LEFT JOIN Usuarios u ON r.id_usr = u.id_usr
+            LEFT JOIN Categorias c ON r.id_categoria = c.id_categoria
             WHERE 1=1
         `;
 
@@ -163,6 +206,29 @@ class Report {
             [lng, lat, lng, lat, radiusMeters]
         );
         return rows;
+    }
+
+    // Estadísticas del usuario logueado
+    static async countByUser(userId) {
+        const [rows] = await pool.query(
+            `SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN estado IN ('por aprobar', 'Aprobado', 'en progreso') THEN 1 ELSE 0 END) as activos
+             FROM Reportes
+             WHERE id_usr = ?`,
+            [userId]
+        );
+        return rows[0] || { total: 0, activos: 0 };
+    }
+
+    // Contador de reportes creados hoy (todos los usuarios)
+    static async countTodayAll() {
+        const [rows] = await pool.query(
+            `SELECT COUNT(*) as count 
+             FROM Reportes 
+             WHERE DATE(creado_en) = CURDATE()`
+        );
+        return rows[0]?.count || 0;
     }
 }
 
