@@ -1,6 +1,7 @@
 import { comparePassword, encryptPassword } from '../utils/bcrypt.js';
 import { generateToken } from '../utils/jwt.js';
 import { isCedulaValida, isEmailValido } from '../utils/validation.js';
+import User from '../models/User.js';
 
 export const login = async (req, res, next) => {
     try {
