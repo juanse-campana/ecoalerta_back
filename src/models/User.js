@@ -7,7 +7,8 @@ class User {
             SELECT 
                 u.id_usr, u.nombre, u.apellido, u.correo, u.contrasena, u.rol, u.cedula, u.telefono, u.id_ciudad,
                 c.nombre as ciudad_nombre,
-                p.nombre as provincia_nombre
+                p.nombre as provincia_nombre,
+                p.id_provincia
             FROM Usuarios u
             LEFT JOIN Ciudades c ON u.id_ciudad = c.id_ciudad
             LEFT JOIN Provincias p ON c.id_provincia = p.id_provincia

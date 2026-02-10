@@ -5,7 +5,7 @@ import catalogosRouter from './catalogos.routes.js';
 import authRouter from './auth.routes.js';
 import reportesRouter from './report.routes.js';
 import interactionRouter from './interaction.routes.js';
-// import usuariosRouter from './usuarios.routes.js';
+import usuariosRouter from './user.routes.js';
 
 const router = Router();
 
@@ -23,7 +23,8 @@ router.use('/reportes', reportesRouter);
 router.use('/', interactionRouter);
 
 // (Opcional) Puedes añadir más en el futuro
-// router.use('/usuarios', usuariosRouter);
+// Rutas de usuario (Perfil)
+router.use('/usuarios', usuariosRouter);
 
 // Exportamos el "Menú Principal" completo
 export default router;

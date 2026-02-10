@@ -22,8 +22,8 @@ class Report {
     static async createSimple(data) {
         const query = `
             INSERT INTO Reportes 
-            (descripcion, latitud, longitud, ubicacion, estado, id_categoria, id_usr) 
-            VALUES (?, ?, ?, ?, 'por aprobar', ?, ?)
+            (descripcion, latitud, longitud, ubicacion, estado, id_categoria, id_usr, id_provincia, id_ciudad) 
+            VALUES (?, ?, ?, ?, 'por aprobar', ?, ?, ?, ?)
         `;
         const params = [
             data.descripcion || null,
@@ -31,14 +31,16 @@ class Report {
             data.longitud,
             data.ubicacion || null,
             data.id_categoria,
-            data.id_usr_bin || null
+            data.id_usr_bin || null,
+            data.id_provincia || null,
+            data.id_ciudad || null
         ];
 
         const [result] = await pool.query(query, params);
         return result.insertId;
     }
 
-    static async findAllPublic(currentUserId = null) {
+    static async findAllPublic(currentUserId = null, filters = {}) {
         const [rows] = await pool.query(
             `SELECT 
                 r.id_reporte, 
@@ -60,8 +62,15 @@ class Report {
              FROM Reportes r
              LEFT JOIN Usuarios u ON r.id_usr = u.id_usr
              WHERE r.estado = 'Aprobado'
+             ${filters.id_provincia ? 'AND r.id_provincia = ?' : ''}
+             ${filters.id_ciudad ? 'AND r.id_ciudad = ?' : ''}
              ORDER BY r.id_reporte DESC`,
-            [currentUserId, currentUserId]
+            [
+                currentUserId,
+                currentUserId,
+                ...(filters.id_provincia ? [filters.id_provincia] : []),
+                ...(filters.id_ciudad ? [filters.id_ciudad] : [])
+            ]
         );
         return rows;
     }
@@ -154,6 +163,11 @@ class Report {
         if (filters.id_categoria) {
             query += ' AND r.id_categoria = ?';
             params.push(filters.id_categoria);
+        }
+
+        if (filters.id_provincia) {
+            query += ' AND r.id_provincia = ?';
+            params.push(filters.id_provincia);
         }
 
         query += ' ORDER BY r.id_reporte DESC';

@@ -7,7 +7,7 @@ class ReportController {
 
     static async createReport(req, res) {
         try {
-            const { descripcion, latitud, longitud, id_categoria, ubicacion } = req.body;
+            const { descripcion, latitud, longitud, id_categoria, ubicacion, id_provincia, id_ciudad } = req.body;
 
             // Si hay usuario autenticado, usamos su ID, sino es null (anónimo)
             const id_usr_bin = req.user ? req.user.id : null;
@@ -19,7 +19,9 @@ class ReportController {
                 longitud,
                 ubicacion,
                 id_categoria,
-                id_usr_bin
+                id_usr_bin,
+                id_provincia,
+                id_ciudad
             });
 
             // 2. Procesar y guardar Multimedia
@@ -77,7 +79,8 @@ class ReportController {
     static async getPublicReports(req, res) {
         try {
             const currentUserId = req.user?.id;
-            const reports = await Report.findAllPublic(currentUserId);
+            const { id_provincia, id_ciudad } = req.query;
+            const reports = await Report.findAllPublic(currentUserId, { id_provincia, id_ciudad });
 
             // Para cada reporte, podríamos querer adjuntar su multimedia principal
             // Por rendimiento, idealmente haríamos un JOIN en el modelo, 
@@ -145,8 +148,8 @@ class ReportController {
 
     static async getAllReports(req, res) {
         try {
-            const { estado, id_categoria } = req.query;
-            const reports = await Report.findAllAdmin({ estado, id_categoria });
+            const { estado, id_categoria, id_provincia, id_ciudad } = req.query;
+            const reports = await Report.findAllAdmin({ estado, id_categoria, id_provincia, id_ciudad });
             res.json({
                 success: true,
                 data: reports

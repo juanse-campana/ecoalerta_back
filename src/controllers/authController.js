@@ -1,13 +1,14 @@
-import User from '../models/User.js';
 import { comparePassword, encryptPassword } from '../utils/bcrypt.js';
 import { generateToken } from '../utils/jwt.js';
+import { isCedulaValida, isEmailValido } from '../utils/validation.js';
 
 export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
+        const normalizedEmail = email?.toLowerCase();
 
         // 1. Buscar usuario
-        const user = await User.findOne({ email });
+        const user = await User.findOne({ email: normalizedEmail });
         if (!user) {
             return res.status(404).json({ message: "Usuario no encontrado" });
         }
@@ -50,17 +51,26 @@ export const register = async (req, res, next) => {
             return res.status(400).json({ message: "Faltan campos obligatorios" });
         }
 
+        if (!isEmailValido(email)) {
+            return res.status(400).json({ message: "El formato del correo es inválido" });
+        }
+
+        if (cedula && !isCedulaValida(cedula)) {
+            return res.status(400).json({ message: "La cédula no es válida" });
+        }
+
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: "El usuario ya existe" });
         }
 
         const hashedPassword = await encryptPassword(password);
+        const normalizedEmail = email.toLowerCase();
 
         const userId = await User.create({
             nombre,
             apellido,
-            correo: email,
+            correo: normalizedEmail,
             contrasena: hashedPassword,
             cedula,
             telefono,
