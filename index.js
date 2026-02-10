@@ -76,9 +76,9 @@ app.use(errorHandler);
 // --- Iniciar Servidor ---
 // Solo si no estamos en modo test
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`Servidor corriendo en http://localhost:${PORT}`);
-    console.log(`Documentacion en http://localhost:${PORT}/api/docs`);
+  app.listen(PORT, '127.0.0.1', () => {
+    console.log(`Servidor corriendo en http://127.0.0.1:${PORT}`);
+    console.log(`Documentacion en http://127.0.0.1:${PORT}/api/docs`);
     console.log(`Entorno: ${process.env.NODE_ENV || 'development'}`);
   });
 }
